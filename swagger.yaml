@@ -1,43 +1,30 @@
 swagger: '2.0'
 info:
-  title: TemplateSwaggerProject API
+  title: Qohor backend API 
   description: >
-    Describe the API and provide a working bash example for the main use case:
-
-    ```bash
-
-    # Get a token using your username and password:
-
-    TOKEN=$(curl -X POST -u username:password 'https://stagingapi.planckre.com/v1/auth/token' | jq -r '.token')
-
-
-    # Get an object by id if it exist:
-
-    SOMEID="123456"
-
-    curl --header "Authorization: Bearer $TOKEN" -X GET "https://templateswaggerproject.herokuapp.com/v1/templateswaggerproject/$SOMEID"
-
-    ```
-
+    This api is the backend for planck qohorui service -
+    it handles lead->prospect->customer lifecycle and operation for planck's customers
   version: 1.0.0-beta
 host: stagingapi.planckre.com
 schemes:
   - https
-basePath: /v1
+basePath: /qohor/v1
 produces:
   - application/json
 securityDefinitions:
   Basic Authentication:
     type: basic
     description: >
-      Basic http authentication using username and password.
-      Used only for the /auth/token endpoint to exchage it with a new bearer token.
+      Basic http authentication using username and password. Used only for the
+      /auth/token endpoint to exchage it with a new bearer token.
   Bearer Token:
     type: apiKey
     description: >
-      A bearer token to be used for all endpoints except for the /auth/token endpoint.
+      A bearer token to be used for all endpoints except for the /users/login
+      endpoint.
     name: Authorization
     in: header
+
 paths:
   /auth/token:
     post:
@@ -66,36 +53,52 @@ paths:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
-  /yourmodels:
-    post:
-      summary: Create a new object.
-      description: >
-        This endpoint creates a new object
+  /activities:
+    get:
+      summary: Get a list of activies the user is in
       tags:
-        - YourModel
+        - Activity
+      security:
+        - Bearer Token: []
+      responses:
+        '200':
+          description: The list of the activies the user is in
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Activity'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /leads:
+    post:
+      summary: Create a new lead.
+      description:  This endpoint creates a new lead
+      tags:
+        - Lead
       security:
         - Bearer Token: []
       parameters:
-        - name: yourModelBody
+        - name: body
           in: body
-          description: 'The object to pass.'
+          description: 'The lead entity object to pass.'
           required: true
           schema:
-            $ref: '#/definitions/YourModel'
-
+            $ref: '#/definitions/LeadEntity'
       responses:
         '201':
-          description: The created empty object
+          description: The newly created lead entity object
           schema:
-            $ref: '#/definitions/YourModel'
+            $ref: '#/definitions/LeadEntity'
         default:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
     get:
-      summary: Get a paginated list of all objects
+      summary: Get a paginated list of all leads
       tags:
-        - YourModel
+        - Lead
       security:
         - Bearer Token: []
       parameters:
@@ -108,46 +111,169 @@ paths:
           default: 0
         - name: size
           in: query
-          description: The number of objects to return in the page.
+          description: The number of leads to return in the page.
           required: false
           type: integer
           format: int32
           default: 50
         - name: startDate
           in: query
-          description: The timestamp of the first object to return.
+          description: The timestamp of the first leads to return.
           required: false
           type: string
-          default: '1980-01-01T00:00:00Z'
+          default: '1970-01-01T00:00:00Z'
       responses:
         '200':
-          description: The paginated objects
+          description: The paginated leads
           schema:
-            $ref: '#/definitions/PaginatedYourModel'
+            $ref: '#/definitions/PaginatedEntities'
         default:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
-  '/yourmodels/{id}':
-    get:
-      summary: Get a specific object using his ID. Object ID can be either the internal ID or the external ID.
+  /prospects:
+    post:
+      summary: Create a new prospect.
+      description:  This endpoint creates a new prospect
       tags:
-        - YourModel
+        - Prospect
       security:
         - Bearer Token: []
       parameters:
-        - name: id
+        - name: body
+          in: body
+          description: 'The prospect entity object to pass.'
+          required: true
+          schema:
+            $ref: '#/definitions/ProspectEntity'
+
+      responses:
+        '201':
+          description: The newly created prospect entity object
+          schema:
+            $ref: '#/definitions/ProspectEntity'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+    get:
+      summary: Get a paginated list of all prospects
+      tags:
+        - Prospect
+      security:
+        - Bearer Token: []
+      parameters:
+        - name: page
+          in: query
+          description: 'The page to return, 0-based.'
+          required: false
+          type: integer
+          format: int32
+          default: 0
+        - name: size
+          in: query
+          description: The number of prospects to return in the page.
+          required: false
+          type: integer
+          format: int32
+          default: 50
+        - name: startDate
+          in: query
+          description: The timestamp of the first prospects to return.
+          required: false
+          type: string
+          default: '1970-01-01T00:00:00Z'
+      responses:
+        '200':
+          description: The paginated prospects
+          schema:
+            $ref: '#/definitions/PaginatedEntities'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /customers:
+    post:
+      summary: Create a new customer.
+      description:  This endpoint creates a new customer
+      tags:
+        - Customer
+      security:
+        - Bearer Token: []
+      parameters:
+        - name: body
+          in: body
+          description: 'The customer entity object to pass.'
+          required: true
+          schema:
+            $ref: '#/definitions/CustomerEntity'
+
+      responses:
+        '201':
+          description: The newly created customer entity object
+          schema:
+            $ref: '#/definitions/CustomerEntity'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+    get:
+      summary: Get a paginated list of all customers
+      tags:
+        - Customer
+      security:
+        - Bearer Token: []
+      parameters:
+        - name: page
+          in: query
+          description: 'The page to return, 0-based.'
+          required: false
+          type: integer
+          format: int32
+          default: 0
+        - name: size
+          in: query
+          description: The number of customers to return in the page.
+          required: false
+          type: integer
+          format: int32
+          default: 50
+        - name: startDate
+          in: query
+          description: The timestamp of the first customers to return.
+          required: false
+          type: string
+          default: '1970-01-01T00:00:00Z'
+      responses:
+        '200':
+          description: The paginated customers
+          schema:
+            $ref: '#/definitions/PaginatedEntities'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+
+  /leads/{leadEntityId}:
+    get:
+      summary: Get a specific lead using its ID. Lead entity ID can be either the internal ID or the external ID.
+      tags:
+        - Lead
+      security:
+        - Bearer Token: []
+      parameters:
+        - name: leadEntityId
           in: path
-          description: 'The object ID, either the internal one or the external one'
+          description: 'Lead entity ID can be either the internal ID or the external ID'
           required: true
           type: string
       responses:
         '200':
-          description: The requested object
+          description: The requested lead
           schema:
-            $ref: '#/definitions/YourModel'
+            $ref: '#/definitions/LeadEntity'
         '404':
-          description: No such object ID
+          description: No such lead ID
           schema:
             $ref: '#/definitions/Error'
         default:
@@ -155,34 +281,1630 @@ paths:
           schema:
             $ref: '#/definitions/Error'
     delete:
-      summary: Delete an object using his ID. Object ID can be either the internal ID or the external ID.
+      summary: Delete a lead using its ID. Lead entity ID can be either the internal ID or the external ID.
       tags:
-        - YourModel
+        - Lead
       security:
         - Bearer Token: []
       parameters:
-        - name: id
+        - name: leadEntityId
           in: path
-          description: 'The object ID, either the internal one or the external one'
+          description: 'Lead entity ID can be either the internal ID or the external ID.'
           required: true
           type: string
       responses:
         '204':
-          description: Object deleted successfully
+          description: Lead deleted successfully
         '404':
-          description: No such object ID
+          description: No such lead ID
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /prospects/{prospectEntityId}:
+    get:
+      summary: Get a specific prospect using its ID. Prospect entity ID can be either the internal ID or the external ID.
+      tags:
+        - Prospect
+      security:
+        - Bearer Token: []
+      parameters:
+        - name: prospectEntityId
+          in: path
+          description: 'Prospect entity ID can be either the internal ID or the external ID'
+          required: true
+          type: string
+      responses:
+        '200':
+          description: The requested prospect
+          schema:
+            $ref: '#/definitions/ProspectEntity'
+        '404':
+          description: No such prospect ID
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+    delete:
+      summary: Delete a prospect using its ID. Prospect entity ID can be either the internal ID or the external ID.
+      tags:
+        - Prospect
+      security:
+        - Bearer Token: []
+      parameters:
+        - name: prospectEntityId
+          in: path
+          description: 'Prospect entity ID can be either the internal ID or the external ID.'
+          required: true
+          type: string
+      responses:
+        '204':
+          description: Prospect deleted successfully
+        '404':
+          description: No such prospect ID
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /customers/{customerEntityId}:
+    get:
+      summary: Get a specific customer using its ID. Customer entity ID can be either the internal ID or the external ID.
+      tags:
+        - Customer
+      security:
+        - Bearer Token: []
+      parameters:
+        - name: customerEntityId
+          in: path
+          description: 'Customer entity ID can be either the internal ID or the external ID'
+          required: true
+          type: string
+      responses:
+        '200':
+          description: The requested customer
+          schema:
+            $ref: '#/definitions/CustomerEntity'
+        '404':
+          description: No such customer ID
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+    delete:
+      summary: Delete a customer using its ID. Customer entity ID can be either the internal ID or the external ID.
+      tags:
+        - Customer
+      security:
+        - Bearer Token: []
+      parameters:
+        - name: customerEntityId
+          in: path
+          description: 'Customer entity ID can be either the internal ID or the external ID.'
+          required: true
+          type: string
+      responses:
+        '204':
+          description: Customer deleted successfully
+        '404':
+          description: No such customer ID
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+
+  /leads/{leadEntityId}/reflections/{reflectionType}:
+    post:
+      summary: Add a new reflection an existing lead.
+      description:  This endpoint adds a new reflection to an existing lead
+      tags:
+        - Lead
+        - Reflection
+      security:
+        - Bearer Token: []
+      parameters:
+        - name: leadEntityId
+          in: path
+          description: 'Lead entity ID can be either the internal ID or the external ID'
+          required: true
+          type: string
+        - name: reflectionType
+          in: path
+          description: 'The reflection type; one of MANUAL, WEB_PRESENCE, or GENERAL_WEBPAGE'
+          required: true
+          type: string
+        - name: body
+          in: body
+          description: 'The lead entity object to pass.'
+          required: true
+          schema:
+            $ref: '#/definitions/Reflection'
+      responses:
+        '201':
+          description: The updated lead entity object
+          schema:
+            $ref: '#/definitions/LeadEntity'
+        '404':
+          description: No such lead ID
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /prospects/{prospectEntityId}/reflections/{reflectionType}:
+    post:
+      summary: Add a new reflection an existing prospect.
+      description:  This endpoint adds a new reflection to an existing prospect
+      tags:
+        - Prospect
+        - Reflection
+      security:
+        - Bearer Token: []
+      parameters:
+        - name: prospectEntityId
+          in: path
+          description: 'Prospect entity ID can be either the internal ID or the external ID'
+          required: true
+          type: string
+        - name: reflectionType
+          in: path
+          description: 'The reflection type; one of MANUAL, WEB_PRESENCE, or GENERAL_WEBPAGE'
+          required: true
+          type: string
+        - name: body
+          in: body
+          description: 'The prospect entity object to pass.'
+          required: true
+          schema:
+            $ref: '#/definitions/Reflection'
+      responses:
+        '201':
+          description: The updated prospect entity object
+          schema:
+            $ref: '#/definitions/ProspectEntity'
+        '404':
+          description: No such prospect ID
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /customers/{customerEntityId}/reflections/{reflectionType}:
+    post:
+      summary: Add a new reflection an existing customer.
+      description:  This endpoint adds a new reflection to an existing customer
+      tags:
+        - Customer
+        - Reflection
+      security:
+        - Bearer Token: []
+      parameters:
+        - name: customerEntityId
+          in: path
+          description: 'Customer entity ID can be either the internal ID or the external ID'
+          required: true
+          type: string
+        - name: reflectionType
+          in: path
+          description: 'The reflection type; one of MANUAL, WEB_PRESENCE, or GENERAL_WEBPAGE'
+          required: true
+          type: string
+        - name: body
+          in: body
+          description: 'The customer entity object to pass.'
+          required: true
+          schema:
+            $ref: '#/definitions/Reflection'
+      responses:
+        '201':
+          description: The updated customer entity object
+          schema:
+            $ref: '#/definitions/CustomerEntity'
+        '404':
+          description: No such customer ID
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+
+  /leads/{leadEntityId}/reflections/{reflectionType}/{reflectionId}:
+    delete:
+      summary: Delete a reflection of an existing id
+      tags:
+        - Lead
+      security:
+        - Bearer Token: []
+      parameters:
+        - name: leadEntityId
+          in: path
+          description: 'Lead entity ID can be either the internal ID or the external ID.'
+          required: true
+          type: string
+        - name: reflectionId
+          in: path
+          description: 'Lead entity ID can be either the internal ID or the external ID.'
+          required: true
+          type: string
+        - name: reflectionType
+          in: path
+          description: 'The reflection type; one of MANUAL, WEB_PRESENCE, or GENERAL_WEBPAGE'
+          required: true
+          type: string
+      responses:
+        '202':
+          description: Reflection deleted successfully from lead. Return value is the updated lead entity object
+          schema:
+            $ref: '#/definitions/LeadEntity'
+        '404':
+          description: 'No such lead ID or no such reflection id'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /prospects/{prospectEntityId}/reflections/{reflectionType}/{reflectionId}:
+    delete:
+      summary: Delete a reflection of an existing id
+      tags:
+        - Prospect
+      security:
+        - Bearer Token: []
+      parameters:
+        - name: prospectEntityId
+          in: path
+          description: 'Prospect entity ID can be either the internal ID or the external ID.'
+          required: true
+          type: string
+        - name: reflectionId
+          in: path
+          description: 'Prospect entity ID can be either the internal ID or the external ID.'
+          required: true
+          type: string
+        - name: reflectionType
+          in: path
+          description: 'The reflection type; one of MANUAL, WEB_PRESENCE, or GENERAL_WEBPAGE'
+          required: true
+          type: string
+      responses:
+        '202':
+          description: Reflection deleted successfully from prospect. Return value is the updated prospect entity object
+          schema:
+            $ref: '#/definitions/ProspectEntity'
+        '404':
+          description: 'No such prospect ID or no such reflection id'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /customers/{customerEntityId}/reflections/{reflectionType}/{reflectionId}:
+    delete:
+      summary: Delete a reflection of an existing id
+      tags:
+        - Customer
+      security:
+        - Bearer Token: []
+      parameters:
+        - name: customerEntityId
+          in: path
+          description: 'Customer entity ID can be either the internal ID or the external ID.'
+          required: true
+          type: string
+        - name: reflectionId
+          in: path
+          description: 'Customer entity ID can be either the internal ID or the external ID.'
+          required: true
+          type: string
+        - name: reflectionType
+          in: path
+          description: 'The reflection type; one of manual, WEB_PRESENCE, or GENERAL_WEBPAGE'
+          required: true
+          type: string
+      responses:
+        '202':
+          description: Reflection deleted successfully from customer. Return value is the updated customer entity object
+          schema:
+            $ref: '#/definitions/CustomerEntity'
+        '404':
+          description: 'No such customer ID or no such reflection id'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+
+  /leads/{leadEntityId}/insights/{insightsVersionId}:
+    put:
+      summary: Updates the lead current insights reflection version to he given version id
+      description:  Updates the lead currentInsightsReflectionVersion to given version
+      tags:
+        - Lead
+        - Reflection
+        - Insight
+      security:
+        - Bearer Token: []
+      parameters:
+        - name: leadEntityId
+          in: path
+          description: 'Lead entity ID can be either the internal ID or the external ID.'
+          required: true
+          type: string
+        - name: insightsVersionId
+          in: path
+          description: 'The insights version id to update to.'
+          required: true
+          type: string
+      responses:
+        '202':
+          description: The updated lead entity object
+          schema:
+            $ref: '#/definitions/LeadEntity'
+        '404':
+          description: 'No such lead ID or no such reflection version'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /prospects/{prospectEntityId}/insights/{insightsVersionId}:
+    put:
+      summary: Updates the prospect current insights reflection version  to he given version id
+      description:  Updates the prospect currentInsightsReflectionVersion to given version
+      tags:
+        - Prospect
+        - Reflection
+        - Insight
+      security:
+        - Bearer Token: []
+      parameters:
+        - name: prospectEntityId
+          in: path
+          description: 'Prospect entity ID can be either the internal ID or the external ID.'
+          required: true
+          type: string
+        - name: insightsVersionId
+          in: path
+          description: 'The insights version id to update to.'
+          required: true
+          type: string
+      responses:
+        '202':
+          description: The updated prospect entity object
+          schema:
+            $ref: '#/definitions/ProspectEntity'
+        '404':
+          description: 'No such prospect ID or no such reflection version'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /customers/{customerEntityId}/insights/{insightsVersionId}:
+    put:
+      summary: Updates the customer current insights reflection version  to he given version id
+      description:  Updates the customer currentInsightsReflectionVersion to given version
+      tags:
+        - Customer
+        - Reflection
+        - Insight
+      security:
+        - Bearer Token: []
+      parameters:
+        - name: customerEntityId
+          in: path
+          description: 'Customer entity ID can be either the internal ID or the external ID.'
+          required: true
+          type: string
+        - name: insightsVersionId
+          in: path
+          description: 'The insights version id to update to.'
+          required: true
+          type: string
+      responses:
+        '202':
+          description: The updated customer entity object
+          schema:
+            $ref: '#/definitions/CustomerEntity'
+        '404':
+          description: 'No such customer ID or no such reflection version'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+
+  /leads/{leadEntityId}/insights/versions:
+    get:
+      summary: Get the lead insights versions list sorted descending
+      tags:
+        - Lead
+        - Reflection
+        - Insight
+        - Version
+      security:
+        - Bearer Token: []
+      parameters:
+        - name: leadEntityId
+          in: path
+          description: 'Lead entity ID can be either the internal ID or the external ID.'
+          required: true
+          type: string
+        - name: page
+          in: query
+          description: 'The page to return, 0-based.'
+          required: false
+          type: integer
+          format: int32
+          default: 0
+        - name: size
+          in: query
+          description: The number of prospects to return in the page.
+          required: false
+          type: integer
+          format: int32
+          default: 50
+        - name: startDate
+          in: query
+          description: The timestamp of the first prospects to return.
+          required: false
+          type: string
+          default: '1970-01-01T00:00:00Z'
+      responses:
+        '200':
+          description: The paginated leads
+          schema:
+            $ref: '#/definitions/PaginatedInsightsVersions'
+        '404':
+          description: 'No such lead ID'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /prospects/{prospectEntityId}/insights/versions:
+    get:
+      summary: Get the prospect insights versions list sorted descending
+      tags:
+        - Propsect
+        - Reflection
+        - Insight
+        - Version
+      security:
+        - Bearer Token: []
+      parameters:
+        - name: prospectEntityId
+          in: path
+          description: 'Propsect entity ID can be either the internal ID or the external ID.'
+          required: true
+          type: string
+        - name: page
+          in: query
+          description: 'The page to return, 0-based.'
+          required: false
+          type: integer
+          format: int32
+          default: 0
+        - name: size
+          in: query
+          description: The number of prospects to return in the page.
+          required: false
+          type: integer
+          format: int32
+          default: 50
+        - name: startDate
+          in: query
+          description: The timestamp of the first prospects to return.
+          required: false
+          type: string
+          default: '1970-01-01T00:00:00Z'
+      responses:
+        '200':
+          description: The paginated prospects
+          schema:
+            $ref: '#/definitions/PaginatedInsightsVersions'
+        '404':
+          description: 'No such prospect ID'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /customers/{customerEntityId}/insights/versions:
+    get:
+      summary: Get the customer insights versions list sorted descending
+      tags:
+        - Customer
+        - Reflection
+        - Insight
+        - Version
+      security:
+        - Bearer Token: []
+      parameters:
+        - name: customerEntityId
+          in: path
+          description: 'Customer entity ID can be either the internal ID or the external ID.'
+          required: true
+          type: string
+        - name: page
+          in: query
+          description: 'The page to return, 0-based.'
+          required: false
+          type: integer
+          format: int32
+          default: 0
+        - name: size
+          in: query
+          description: The number of prospects to return in the page.
+          required: false
+          type: integer
+          format: int32
+          default: 50
+        - name: startDate
+          in: query
+          description: The timestamp of the first prospects to return.
+          required: false
+          type: string
+          default: '1970-01-01T00:00:00Z'
+      responses:
+        '200':
+          description: The paginated customers
+          schema:
+            $ref: '#/definitions/PaginatedInsightsVersions'
+        '404':
+          description: 'No such customer ID'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+
+  /leads/{leadEntityId}/insights/{insightsVersionId}/cards:
+    get:
+      summary: Get the lead insights for a specific version as cards
+      tags:
+        - Lead
+        - Reflection
+        - Insight
+      security:
+        - Bearer Token: []
+      parameters:
+        - name: leadEntityId
+          in: path
+          description: 'Lead entity ID can be either the internal ID or the external ID.'
+          required: true
+          type: string
+        - name: insightsVersionId
+          in: path
+          description: The insights version id to get.
+          required: true
+          type: string
+      responses:
+        '200':
+          description: The paginated leads
+          schema:
+            $ref: '#/definitions/InsightsDeck'
+        '404':
+          description: 'No such lead ID or no such reflection version'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /prospects/{prospectEntityId}/insights/{insightsVersionId}/cards:
+    get:
+      summary: Get the prospect insights for a specific version as cards
+      tags:
+        - Prospect
+        - Reflection
+        - Insight
+      security:
+        - Bearer Token: []
+      parameters:
+        - name: prospectEntityId
+          in: path
+          description: 'Prospect entity ID can be either the internal ID or the external ID.'
+          required: true
+          type: string
+        - name: insightsVersionId
+          in: path
+          description: The insights version id to get
+          required: true
+          type: string
+      responses:
+        '200':
+          description: The paginated prospects
+          schema:
+            $ref: '#/definitions/InsightsDeck'
+        '404':
+          description: 'No such prospect ID or no such reflection version'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /customers/{customerEntityId}/insights/{insightsVersionId}/cards:
+    get:
+      summary: Get the customer insights for a specific version
+      tags:
+        - Customer
+        - Reflection
+        - Insight
+      security:
+        - Bearer Token: []
+      parameters:
+        - name: customerEntityId
+          in: path
+          description: 'Customer entity ID can be either the internal ID or the external ID.'
+          required: true
+          type: string
+        - name: insightsVersionId
+          in: path
+          description: The insights version id to get
+          required: true
+          type: string
+      responses:
+        '200':
+          description: The paginated customers
+          schema:
+            $ref: '#/definitions/InsightsDeck'
+        '404':
+          description: 'No such customer ID or no such reflection version'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+
+  /leads/{leadEntityId}/notes:
+    post:
+      summary: Post a new note on a lead entity
+      description:  Post a new note on a lead entity. Stores the note
+      tags:
+        - Lead
+        - Note
+      security:
+        - Bearer Token: []
+      parameters:
+        - name: leadEntityId
+          in: path
+          description: 'Lead entity ID can be either the internal ID or the external ID.'
+          required: true
+          type: string
+        - name: entityNote
+          in: body
+          description: 'The note to add.'
+          required: true
+          schema:
+            $ref: '#/definitions/Note'
+      responses:
+        '201':
+          description: The newly created note
+          schema:
+            $ref: '#/definitions/Note'
+        '404':
+          description: 'No such lead ID'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+    get:
+      summary: Get the lead notes
+      tags:
+        - Lead
+        - Note
+      security:
+        - Bearer Token: []
+      parameters:
+        - name: leadEntityId
+          in: path
+          description: 'Lead entity ID can be either the internal ID or the external ID.'
+          required: true
+          type: string
+        - name: startDate
+          in: query
+          description: The timestamp of the first note to return.
+          required: false
+          type: string
+          default: '1970-01-01T00:00:00Z'
+        - name: endDate
+          in: query
+          description: The timestamp of the last note to return.
+          required: false
+          type: string
+          default: '2050-01-01T00:00:00Z'
+        - name: includeAllAncestorsEntitiesNotes
+          in: query
+          description: Indicator wheter to include all ancestors entities notes
+          required: false
+          type: boolean
+          default: true
+      responses:
+        '200':
+          description: The lead entity's notes
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Note'
+        '404':
+          description: 'No such lead ID or no such reflection version'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /prospects/{prospectEntityId}/notes:
+    post:
+      summary: Post a new note on a prospect entity
+      description:  Post a new note on a prospect entity. Stores the note
+      tags:
+        - Prospect
+        - Note
+      security:
+        - Bearer Token: []
+      parameters:
+        - name: prospectEntityId
+          in: path
+          description: 'Prospect entity ID can be either the internal ID or the external ID.'
+          required: true
+          type: string
+        - name: entityNote
+          in: body
+          description: 'The note to add.'
+          required: true
+          schema:
+            $ref: '#/definitions/Note'
+      responses:
+        '201':
+          description: The newly created note
+          schema:
+            $ref: '#/definitions/Note'
+        '404':
+          description: 'No such prospect ID'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+    get:
+      summary: Get the prospect notes
+      tags:
+        - Prospect
+        - Note
+      security:
+        - Bearer Token: []
+      parameters:
+        - name: prospectEntityId
+          in: path
+          description: 'Prospect entity ID can be either the internal ID or the external ID.'
+          required: true
+          type: string
+        - name: startDate
+          in: query
+          description: The timestamp of the first note to return.
+          required: false
+          type: string
+          default: '1970-01-01T00:00:00Z'
+        - name: endDate
+          in: query
+          description: The timestamp of the last note to return.
+          required: false
+          type: string
+          default: '2050-01-01T00:00:00Z'
+        - name: includeAllAncestorsEntitiesNotes
+          in: query
+          description: Indicator wheter to include all ancestors entities notes
+          required: false
+          type: boolean
+          default: true
+      responses:
+        '200':
+          description: The prospect entity's prospects
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Note'
+        '404':
+          description: 'No such prospect ID or no such reflection version'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /customers/{customerEntityId}/notes:
+    post:
+      summary: Post a new note on a customer entity
+      description:  Post a new note on a customer entity. Stores the note
+      tags:
+        - Customer
+        - Note
+      security:
+        - Bearer Token: []
+      parameters:
+        - name: customerEntityId
+          in: path
+          description: 'Customer entity ID can be either the internal ID or the external ID.'
+          required: true
+          type: string
+        - name: entityNote
+          in: body
+          description: 'The note to add.'
+          required: true
+          schema:
+            $ref: '#/definitions/Note'
+      responses:
+        '201':
+          description: The newly created note
+          schema:
+            $ref: '#/definitions/Note'
+        '404':
+          description: 'No such customer ID'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+    get:
+      summary: Get the customer notes
+      tags:
+        - Customer
+        - Note
+      security:
+        - Bearer Token: []
+      parameters:
+        - name: customerEntityId
+          in: path
+          description: 'Customer entity ID can be either the internal ID or the external ID.'
+          required: true
+          type: string
+        - name: startDate
+          in: query
+          description: The timestamp of the first note to return.
+          required: false
+          type: string
+          default: '1970-01-01T00:00:00Z'
+        - name: endDate
+          in: query
+          description: The timestamp of the last note to return.
+          required: false
+          type: string
+          default: '2050-01-01T00:00:00Z'
+        - name: includeAllAncestorsEntitiesNotes
+          in: query
+          description: Indicator wheter to include all ancestors entities notes
+          required: false
+          type: boolean
+          default: true
+      responses:
+        '200':
+          description: The customer entity's customers
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Note'
+        '404':
+          description: 'No such customer ID or no such reflection version'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+
+  /leads/{leadEntityId}/promote:
+    post:
+      summary: Promote a lead entity to a prospect
+      description:  Promote a lead entity to a prospect
+      tags:
+        - Lead
+        - Promote
+        - Prospect
+      security:
+        - Bearer Token: []
+      parameters:
+        - name: leadEntityId
+          in: path
+          description: 'Lead entity ID can be either the internal ID or the external ID.'
+          required: true
+          type: string
+      responses:
+        '201':
+          description: The newly prospect
+          schema:
+            $ref: '#/definitions/ProspectEntity'
+        '404':
+          description: 'No such lead ID'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /prospects/{prospectEntityId}/promote:
+    post:
+      summary: Promote a prospect entity to a customer
+      description:  Promote a prospect entity to a customer
+      tags:
+        - Prospect
+        - Promote
+        - Customer
+      security:
+        - Bearer Token: []
+      parameters:
+        - name: prospectEntityId
+          in: path
+          description: 'Prospect entity ID can be either the internal ID or the external ID.'
+          required: true
+          type: string
+      responses:
+        '201':
+          description: The newly customer
+          schema:
+            $ref: '#/definitions/CustomerEntity'
+        '404':
+          description: 'No such prospect ID'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /customers/{customerEntityId}/demote:
+    post:
+      summary: Demote a customer entity to a prospect
+      description:  Demote a customer entity to a prospect
+      tags:
+        - Customer
+        - Demote
+        - Prospect
+      security:
+        - Bearer Token: []
+      parameters:
+        - name: customerEntityId
+          in: path
+          description: 'Customer entity ID can be either the internal ID or the external ID.'
+          required: true
+          type: string
+      responses:
+        '201':
+          description: The newly lead
+          schema:
+            $ref: '#/definitions/ProspectEntity'
+        '404':
+          description: 'No such prospect ID'
         default:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
 
 definitions:
-  SomethingToDependOn:
+  UserView:
+    type: object
+    required:
+    - entityId
+    description: A log of an insight the user viewed
+    properties:
+      userId:
+        type: string
+        description: The user id of the vieweing user
+      entityId:
+        type: string
+        description: The id of the entity the user viewed
+      rootEntityId:
+        type: string
+        description: The id of the root entity the note is about
+      viewDate:
+        type: string
+        description: An ISO 8601 date format containing the UTC timestamp when the activity was created, e.g. 2016-07-27T23:41:50Z.
+
+  UserInsightsView:
+    allOf:
+      - $ref: '#/definitions/UserView'
+      - properties:
+          insightsVersion:
+            $ref: '#/definitions/InsightsVersion'
+
+  Note:
+    type: object
+    required:
+    - entityId
+    description: Note about an entity
+    properties:
+      rootEntityId:
+        type: string
+        description: The id of the root entity the note is about
+      entityId:
+        type: string
+        description: The id of the entity the note is about
+      entityType:
+        type: string
+        description: The entity type of the entity when posting the note
+      createdTimeStamp:
+        type: string
+        description: An ISO 8601 date format containing the UTC timestamp when the activity was created, e.g. 2016-07-27T23:41:50Z.
+      initiatorUserId:
+        type: string
+        description: The user id of the user that created the activity
+      content:
+        type: string
+        description: The note content
+      actionOnEntity:
+        type: string
+        description: A word about the action executed on the entity
+      severity:
+        type: string
+        enum:
+        - AUTOMATIC
+        - INFO
+        - WARNING
+        - ALERT
+        - NEEDS_REVIEW
+        - ACTION_NEEDED
+        description: The severity of the note
+  Activity:
+    type: object
+    description: An activity, a.k.a a Job, is a thread the group manage with their entities inside (a group of Leads, Prospects, and Customers). Custom activities are created by the users. Lead Gen or Import activities are created by the system and cannot be edited (cannot change their name)..
+    properties:
+      id:
+        type: string
+        description: The id of the activity
+      # ownerGroupId:
+      #   type: string
+      #   description: The group this activity belongs to
+      createdTimeStamp:
+        type: string
+        description: An ISO 8601 date format containing the UTC timestamp when the activity was created, e.g. 2016-07-27T23:41:50Z.
+      creatingUserId:
+        type: string
+        description: The user id of the user that created the activity
+      activityName:
+        type: string
+        description: The name of the activity
+      activityType:
+        $ref: '#/definitions/ActivityType'
+  ActivityType:
+    type: string
+    enum:
+      - LeadGeneration
+      - ImportJob
+      - Custom
+  MinimalBusinessEntity:
+    discriminator: entityType
+    required:
+      - entityType
+      - basicDetails
+    properties:
+      id:
+        type: string
+        description: The id of the entity
+      entityType:
+        type: string
+      updatedDate:
+        type: string
+        description: >-
+          An ISO 8601 date format containing the UTC timestamp when the entity was created, e.g. 2016-07-27T23:41:50Z.
+        default: false
+      activityId:
+        type: string
+        description: Activity Id (might in the future be list of activities, and a case might be connected to several custom activities, and a single "import" or "lead gen" activities)
+      externalId:
+        type: string
+        description: The external ID of the entity, if given, cannot be changed after creation
+      basicDetails:
+        $ref: '#/definitions/BasicEntityDetails'
+      userLastView:
+        $ref: '#/definitions/UserView'
+      userLastInsightsView:
+        $ref: '#/definitions/UserInsightsView'
+      insightsCoverage:
+        $ref: '#/definitions/InsightsCoverage'
+
+  BusinessEntity:
+    discriminator: entityType
+    required:
+      - entityType
+      - basicDetails
+    properties:
+      entityType:
+        type: string
+      id:
+        type: string
+        description: The id of the entity
+      createdDate:
+        type: string
+        description: >-
+          An ISO 8601 date format containing the UTC timestamp when the entity was created, e.g. 2016-07-27T23:41:50Z.
+        default: false
+      updatedDate:
+        type: string
+        description: >-
+          An ISO 8601 date format containing the UTC timestamp when the entity was created, e.g. 2016-07-27T23:41:50Z.
+        default: false
+      deletedDate:
+        type: string
+        description: >-
+          An ISO 8601 date format containing the UTC timestamp when the entity was created, e.g. 2016-07-27T23:41:50Z.
+      creatingUserId:
+        type: string
+        description: The user id of the user that created the entity
+      basicDetails:
+        $ref: '#/definitions/BasicEntityDetails'
+      externalId:
+        type: string
+        description: The external ID of the entity, if given, cannot be changed after creation
+      activityId:
+        type: string
+        description: Activity Id (might in the future be list of activities, and a case might be connected to several custom activities, and a single "import" or "lead gen" activities)
+      rootEntityId:
+        type: string
+        description: The root entity id (the first entity's ID as entities can be promoted and a new entity is created pointing to them).
+      convertedToEntityId:
+        type: string
+        description: Converted (i.e. promoted or reverted) to entity ID
+      convertedFromEntityId:
+        type: string
+        description: Converted (i.e. promoted or reverted) from entity ID
+      manualReflections:
+        type: array
+        description: The manual reflections
+        items:
+          $ref: '#/definitions/Reflection'
+      webPresenceReflections:
+        type: array
+        description: The web presence (social) reflections
+        items:
+          $ref: '#/definitions/Reflection'
+      generalWebpageReflections:
+        type: array
+        description: The general web presence (news, etc) reflections
+        items:
+          $ref: '#/definitions/Reflection'
+      latestInsightsVersion:
+        $ref: '#/definitions/InsightsVersion'
+
+  BasicEntityDetails:
+    type: object
+    description: The basic details about entity
+    properties:
+      name:
+        $ref:  '#/definitions/StringAttribute'
+      doingBusinessAs:
+        $ref: '#/definitions/StringAttribute'
+      physicalAddress:
+        $ref: '#/definitions/AddressAttribute'
+      websiteAddress:
+        $ref: '#/definitions/URLAttribute'
+      foundationDate:
+        $ref: '#/definitions/DateAttribute'
+      mainPhoneNumber:
+        $ref: '#/definitions/PhoneAttribute'
+
+  LeadEntity:
+    allOf:
+      - $ref: '#/definitions/BusinessEntity'
+      - properties:
+          currentInsightsVersion:
+            $ref: '#/definitions/InsightsVersion'
+  ProspectEntity:
+    allOf:
+      - $ref: '#/definitions/BusinessEntity'
+      - properties:
+          currentInsightsVersion:
+            $ref: '#/definitions/InsightsVersion'
+  CustomerEntity:
+    allOf:
+      - $ref: '#/definitions/BusinessEntity'
+      - properties:
+          originalInsightsVersion:
+            $ref: '#/definitions/InsightsVersion'
+
+  InsightsDeck:
+    type: object
+    description: The entity's insights for the cards view
+    properties:
+      entityId:
+        type: string
+      sections:
+        type: array
+        description: The insights' sections
+        items:
+          $ref: '#/definitions/InsightsSection'
+
+  InsightsSection:
+    type: object
+    description: An insights' section
+    properties:
+      name:
+        type: string
+      subSections:
+        type: array
+        description: The insights' section sub-sections
+        items:
+          $ref: '#/definitions/InsightsSubSection'
+
+  InsightsSubSection:
+    type: object
+    description: An insights' section sub-section
+    properties:
+      name:
+        type: string
+      subSectionAttributes:
+        type: array
+        description: The insights' section sub-section attributes
+        items:
+          $ref: '#/definitions/BaseAttribute'
+
+
+  InsightsReflection:
     type: object
     properties:
-      michelVincent:
+      id:
+        type: string
+      version:
+        $ref: '#/definitions/InsightsVersion'
+      reflection:
+        $ref: '#/definitions/Reflection'
+      coverage:
+        $ref: '#/definitions/InsightsCoverage'
+
+  InsightsVersion:
+    type: object
+    description: The object that describes a reflection version
+    properties:
+      id:
+        type: string
+      version:
+        type: string
+      versionTimestamp:
+        type: string
+        description: >-
+          An ISO 8601 date format containing the UTC timestamp of the first object in the search, e.g. 2016-07-27T23:41:50Z.
+
+  InsightsCoverage:
+    type: object
+    properties:
+      nonEmptyInsightsCounter:
         type: integer
-        format: int64
+        format: int32
+      allInsightsCounter:
+        type: integer
+        format: int32
+      coverage:
+        type: number
+        format: double
+
+  PaginatedEntities:
+    type: object
+    properties:
+      total:
+        type: integer
+        format: int32
+        description: Total amount of objects
+      page:
+        type: integer
+        format: int32
+        description: >-
+          Current page in the pagination, 0-based index (e.g. page 0,1,2,3,4,...)
+      size:
+        type: integer
+        format: int32
+        description: The page size - number of objects in each page
+      startDate:
+        type: string
+        description: >-
+          An ISO 8601 date format containing the UTC timestamp of the first object in the search, e.g. 2016-07-27T23:41:50Z.
+      entities:
+        type: array
+        items:
+          $ref: '#/definitions/MinimalBusinessEntity'
+
+  PaginatedInsightsVersions:
+    type: object
+    properties:
+      total:
+        type: integer
+        format: int32
+        description: Total amount of objects
+      page:
+        type: integer
+        format: int32
+        description: >-
+          Current page in the pagination, 0-based index (e.g. page 0,1,2,3,4,...)
+      size:
+        type: integer
+        format: int32
+        description: The page size - number of objects in each page
+      startDate:
+        type: string
+        description: >-
+          An ISO 8601 date format containing the UTC timestamp of the first object in the search, e.g. 2016-07-27T23:41:50Z.
+      insightsVersions:
+        type: array
+        items:
+          $ref: '#/definitions/InsightsVersion'
+
+  # PaginatedLead:
+  #   allOf:
+  #     - $ref: '#/definitions/BasePaginatedObject'
+  #     - properties:
+  #         leads:
+  #           type: array
+  #           items:
+  #             $ref: '#/definitions/LeadEntity'
+  # PaginatedProspect:
+  #   allOf:
+  #     - $ref: '#/definitions/BasePaginatedObject'
+  #     - properties:
+  #         prospects:
+  #           type: array
+  #           items:
+  #             $ref: '#/definitions/ProspectEntity'
+  # PaginatedCustomer:
+  #   allOf:
+  #     - $ref: '#/definitions/BasePaginatedObject'
+  #     - properties:
+  #           type: array
+  #           items:
+  #             $ref: '#/definitions/CustomerEntity'
+
+# List of Actions
+# List of Rules
+# List of Alerts
+# List of Reflections
+
+
+  ########################
+  # (start) EntityManager objects
+  ########################
+  EntityAction:
+    type: object
+    properties:
+      action:
+        type: string
+        enum:
+        - CREATED
+        - DELETED
+        - REFLECTION_ADDED
+        - REFLECTION_DELETED
+      entity:
+        $ref: '#/definitions/Entity'
+        description: The seed reflections of this entity.
+  Entity:
+    type: object
+    properties:
+      id:
+        type: string
+        description: The id of the object
+      externalId:
+        type: string
+        description: The external ID of the entity
+      seedReflections:
+        type: array
+        items:
+          $ref: '#/definitions/Reflection'
+        description: The seed reflections of this entity.
+      createdDate:
+        type: string
+        description: >-
+          An ISO 8601 date format containing the UTC timestamp when the object was created, e.g. 2016-07-27T23:41:50Z.
+      addedReflections:
+        type: array
+        items:
+          $ref: '#/definitions/Reflection'
+        description: The reflections of this entity
+      deletedReflections:
+        type: array
+        items:
+          $ref: '#/definitions/Reflection'
+        description: The reflections deleted from this entity
+      representingReflection:
+          $ref: '#/definitions/Reflection'
+  Reflection:
+    type: object
+    description: A representation of the entity by a data source.
+    properties:
+      id:
+        type: string
+      createdDate:
+        type: string
+        description: >-
+          An ISO 8601 date format containing the UTC timestamp when the object was created, e.g. 2016-07-27T23:41:50Z.
+      entityId:
+        type: string
+        description: The entity that this reflection is describing.
+      externalEntityId:
+        type: string
+        description: The external entity ID that the caller provided when creating the entity.
+      source:
+        type: string
+        description: The source that created this reflection for the entity
+      attributes:
+        type: array
+        items:
+          $ref: '#/definitions/BaseAttribute'
+        description: The attributes for this reflection
+  BaseAttribute:
+    discriminator: valueType
+    required:
+      - name
+      - description
+      - valueType
+    properties:
+      name:
+        type: string
+      description:
+        type: string
+      formattedValue:
+        type: string
+      internalStandardName:
+        type: string
+      tags:
+        type: array
+        items:
+          type: string
+      valueType:
+        type: string
+  BooleanAttribute:
+    allOf:
+      - $ref: '#/definitions/BaseAttribute'
+      - properties:
+          boolValue:
+            type: boolean
+  IntegerAttribute:
+    allOf:
+      - $ref: '#/definitions/BaseAttribute'
+      - properties:
+          integerValue:
+            type: integer
+            format: int32
+  LongAttribute:
+    allOf:
+      - $ref: '#/definitions/BaseAttribute'
+      - properties:
+          longValue:
+            type: integer
+            format: int64
+  DoubleAttribute:
+    allOf:
+      - $ref: '#/definitions/BaseAttribute'
+      - properties:
+          doubleValue:
+            type: number
+            format: double
+  FloatAttribute:
+    allOf:
+      - $ref: '#/definitions/BaseAttribute'
+      - properties:
+          floatValue:
+            type: number
+            format: float
+  DateAttribute:
+    allOf:
+      - $ref: '#/definitions/BaseAttribute'
+      - properties:
+          stringValue:
+            type: string
+            description: >-
+              An ISO 8601 date format containing the UTC timestamp when the entity was created, e.g. 2016-07-27T23:41:50Z.
+          year:
+            type: integer
+            format: int32
+          month:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 12
+          dayInMonth:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 31
+          dayInWeek:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 7
+          hour:
+            type: integer
+            format: int32
+            minimum: 0
+            maximum: 23
+          minute:
+            type: integer
+            format: int32
+            minimum: 0
+            maximum: 59
+          second:
+            type: integer
+            format: int32
+            minimum: 0
+            maximum: 59
+          millisecond:
+            type: integer
+            format: int32
+            minimum: 0
+            maximum: 999
+  StringAttribute:
+    allOf:
+      - $ref: '#/definitions/BaseAttribute'
+      - properties:
+          stringValue:
+            type: string
+  ListAttribute:
+    allOf:
+      - $ref: '#/definitions/BaseAttribute'
+      - properties:
+          listValue:
+            type: array
+            items:
+              $ref: '#/definitions/BaseAttribute'
+  AddressAttribute:
+    allOf:
+      - $ref: '#/definitions/BaseAttribute'
+      - properties:
+          originalInput:
+            type: string
+          city:
+            type: string
+          state:
+            type: string
+          country:
+            type: string
+          street:
+            type: string
+          streetNumber:
+            type: integer
+            format: int32
+          zipCode:
+            type: string
+          longitude:
+            type: number
+            format: double
+          latitude:
+            type: number
+            format: double
+  URLAttribute:
+    allOf:
+      - $ref: '#/definitions/BaseAttribute'
+      - properties:
+          fullURL:
+            type: string
+          domain:
+            type: string
+          port:
+            type: integer
+            format: int32
+          protocol:
+            type: string
+            enum:
+            - http
+            - https
+            - ftp
+  PhoneAttribute:
+    allOf:
+      - $ref: '#/definitions/BaseAttribute'
+      - properties:
+          originalInput:
+            type: string
+          countryCode:
+            type: string
+          areaCode:
+            type: string
+          prefix:
+            type: string
+          lineNumber:
+            type: string
+  GraphCoordinateAttribute:
+      allOf:
+        - $ref: '#/definitions/BaseAttribute'
+        - properties:
+            XAttribute:
+              $ref: '#/definitions/BaseAttribute'
+            YAttribute:
+              $ref: '#/definitions/BaseAttribute'
+  GaugeValue:
+      allOf:
+        - $ref: '#/definitions/BaseAttribute'
+        - properties:
+            value:
+              type: number
+              format: double
+            minValue:
+              type: number
+              format: double
+            maxValue:
+              type: number
+              format: double
+            scale:
+              type: string
+  ########################
+  # (end) EntityManager objects
+  ########################
+  # Common objects
 
   AuthToken:
     type: object
@@ -195,6 +1917,7 @@ definitions:
         description: >-
           An ISO 8601 date format containing the UTC timestamp when the token is
           expired, e.g. 2016-07-27T23:41:50Z.
+
   Error:
     type: object
     properties:
@@ -215,62 +1938,3 @@ definitions:
       - status
       - error
       - message
-  YourModel:
-    type: object
-    properties:
-      id:
-        type: string
-        description: The id of the object
-      externalId:
-        type: string
-        description: 'The external ID of the object, if given'
-      someValue:
-        type: string
-        description: Some value
-      createdDate:
-        type: string
-        description: >-
-          An ISO 8601 date format containing the UTC timestamp when the object was created, e.g. 2016-07-27T23:41:50Z.
-      childModels:
-        type: array
-        items:
-          $ref: '#/definitions/SomeOtherModel'
-  SomeOtherModel:
-    type: object
-    description: Some other model.
-    properties:
-      id:
-        type: string
-        description: The id of the other model
-      someInt:
-        description: An int member of the other model
-        type: integer
-        format: int32
-      createdDate:
-        type: string
-        description: >-
-          An ISO 8601 date format containing the UTC timestamp when the other model was uploaded, e.g. 2016-07-27T23:41:50Z.
-  PaginatedYourModel:
-    type: object
-    properties:
-      total:
-        type: integer
-        format: int32
-        description: Total amount of objects
-      page:
-        type: integer
-        format: int32
-        description: >-
-          Current page in the pagination, 0-based index (e.g. page 0,1,2,3,4,...)
-      size:
-        type: integer
-        format: int32
-        description: The page size - number of objects in each page
-      startDate:
-        type: string
-        description: >-
-          An ISO 8601 date format containing the UTC timestamp of the first object in the search, e.g. 2016-07-27T23:41:50Z.
-      yourmodels:
-        type: array
-        items:
-          $ref: '#/definitions/YourModel'
