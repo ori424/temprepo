@@ -1,0 +1,276 @@
+swagger: '2.0'
+info:
+  title: TemplateSwaggerProject API
+  description: >
+    Describe the API and provide a working bash example for the main use case:
+
+    ```bash
+
+    # Get a token using your username and password:
+
+    TOKEN=$(curl -X POST -u username:password 'https://stagingapi.planckre.com/v1/auth/token' | jq -r '.token')
+
+
+    # Get an object by id if it exist:
+
+    SOMEID="123456"
+
+    curl --header "Authorization: Bearer $TOKEN" -X GET "https://templateswaggerproject.herokuapp.com/v1/templateswaggerproject/$SOMEID"
+
+    ```
+
+  version: 1.0.0-beta
+host: stagingapi.planckre.com
+schemes:
+  - https
+basePath: /v1
+produces:
+  - application/json
+securityDefinitions:
+  Basic Authentication:
+    type: basic
+    description: >
+      Basic http authentication using username and password.
+      Used only for the /auth/token endpoint to exchage it with a new bearer token.
+  Bearer Token:
+    type: apiKey
+    description: >
+      A bearer token to be used for all endpoints except for the /auth/token endpoint.
+    name: Authorization
+    in: header
+paths:
+  /auth/token:
+    post:
+      summary: Get a new bearer authentication token.
+      description: >
+        You need to authenticate your call in each API endpoint. The
+        authentication is done using
+
+        an authorization token you need to send in the headers of your HTTP call
+        (i.e. "Authorization: Bearer {token}").
+
+        When you sign up for using this API you receive a username and a
+        password. You need to use this endpoint with the
+
+        username:password combination to retrieve a new bearer token.
+      tags:
+        - Authentication
+      security:
+        - Basic Authentication: []
+      responses:
+        '200':
+          description: The authorization token to use
+          schema:
+            $ref: '#/definitions/AuthToken'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /yourmodels:
+    post:
+      summary: Create a new object.
+      description: >
+        This endpoint creates a new object
+      tags:
+        - YourModel
+      security:
+        - Bearer Token: []
+      parameters:
+        - name: yourModelBody
+          in: body
+          description: 'The object to pass.'
+          required: true
+          schema:
+            $ref: '#/definitions/YourModel'
+
+      responses:
+        '201':
+          description: The created empty object
+          schema:
+            $ref: '#/definitions/YourModel'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+    get:
+      summary: Get a paginated list of all objects
+      tags:
+        - YourModel
+      security:
+        - Bearer Token: []
+      parameters:
+        - name: page
+          in: query
+          description: 'The page to return, 0-based.'
+          required: false
+          type: integer
+          format: int32
+          default: 0
+        - name: size
+          in: query
+          description: The number of objects to return in the page.
+          required: false
+          type: integer
+          format: int32
+          default: 50
+        - name: startDate
+          in: query
+          description: The timestamp of the first object to return.
+          required: false
+          type: string
+          default: '1980-01-01T00:00:00Z'
+      responses:
+        '200':
+          description: The paginated objects
+          schema:
+            $ref: '#/definitions/PaginatedYourModel'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  '/yourmodels/{id}':
+    get:
+      summary: Get a specific object using his ID. Object ID can be either the internal ID or the external ID.
+      tags:
+        - YourModel
+      security:
+        - Bearer Token: []
+      parameters:
+        - name: id
+          in: path
+          description: 'The object ID, either the internal one or the external one'
+          required: true
+          type: string
+      responses:
+        '200':
+          description: The requested object
+          schema:
+            $ref: '#/definitions/YourModel'
+        '404':
+          description: No such object ID
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+    delete:
+      summary: Delete an object using his ID. Object ID can be either the internal ID or the external ID.
+      tags:
+        - YourModel
+      security:
+        - Bearer Token: []
+      parameters:
+        - name: id
+          in: path
+          description: 'The object ID, either the internal one or the external one'
+          required: true
+          type: string
+      responses:
+        '204':
+          description: Object deleted successfully
+        '404':
+          description: No such object ID
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+
+definitions:
+  SomethingToDependOn:
+    type: object
+    properties:
+      michelVincent:
+        type: integer
+        format: int64
+
+  AuthToken:
+    type: object
+    properties:
+      token:
+        type: string
+        description: The bearer token to be used for authenticating all API endpoints
+      expiryDate:
+        type: string
+        description: >-
+          An ISO 8601 date format containing the UTC timestamp when the token is
+          expired, e.g. 2016-07-27T23:41:50Z.
+  Error:
+    type: object
+    properties:
+      timestamp:
+        type: integer
+        format: int64
+      status:
+        type: integer
+        format: int32
+      error:
+        type: string
+      message:
+        type: string
+      path:
+        type: string
+    required:
+      - timestamp
+      - status
+      - error
+      - message
+  YourModel:
+    type: object
+    properties:
+      id:
+        type: string
+        description: The id of the object
+      externalId:
+        type: string
+        description: 'The external ID of the object, if given'
+      someValue:
+        type: string
+        description: Some value
+      createdDate:
+        type: string
+        description: >-
+          An ISO 8601 date format containing the UTC timestamp when the object was created, e.g. 2016-07-27T23:41:50Z.
+      childModels:
+        type: array
+        items:
+          $ref: '#/definitions/SomeOtherModel'
+  SomeOtherModel:
+    type: object
+    description: Some other model.
+    properties:
+      id:
+        type: string
+        description: The id of the other model
+      someInt:
+        description: An int member of the other model
+        type: integer
+        format: int32
+      createdDate:
+        type: string
+        description: >-
+          An ISO 8601 date format containing the UTC timestamp when the other model was uploaded, e.g. 2016-07-27T23:41:50Z.
+  PaginatedYourModel:
+    type: object
+    properties:
+      total:
+        type: integer
+        format: int32
+        description: Total amount of objects
+      page:
+        type: integer
+        format: int32
+        description: >-
+          Current page in the pagination, 0-based index (e.g. page 0,1,2,3,4,...)
+      size:
+        type: integer
+        format: int32
+        description: The page size - number of objects in each page
+      startDate:
+        type: string
+        description: >-
+          An ISO 8601 date format containing the UTC timestamp of the first object in the search, e.g. 2016-07-27T23:41:50Z.
+      yourmodels:
+        type: array
+        items:
+          $ref: '#/definitions/YourModel'
